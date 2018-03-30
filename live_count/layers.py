@@ -6,8 +6,8 @@ Tel Aviv University
 import numpy
 import theano
 import theano.tensor as T
-from theano.tensor.signal import downsample
-from theano.tensor.nnet import conv
+from theano.tensor.signal import pool
+from theano.tensor.nnet import conv2d
 
 
 class LogisticRegression(object):
@@ -26,12 +26,16 @@ class LogisticRegression(object):
         # compute vector of class-membership probabilities in symbolic form
         self.p_y_given_x = T.nnet.softmax(T.dot(input, self.W) + self.b)
 
+
         self.p_y_given_x_printed = theano.printing.Print('p_y_given_x = ')(self.p_y_given_x)
         #self.p_y_given_x_printed = self.p_y_given_x
 
         # compute prediction as class whose probability is maximal in
         # symbolic form
-        self.y_pred = T.argmax(self.p_y_given_x, axis=1)  
+        self.y_pred = T.argmax(self.p_y_given_x, axis=1)   #  TODO - need to return this if something wrong
+
+        #self.y_pred_printed = theano.printing.Print('this is a very important value')(self.y_pred)  #  TODO - need to return this if something wrong
+  
        # parameters of the model
         self.params = [self.W, self.b]
 
@@ -42,11 +46,15 @@ class LogisticRegression(object):
         W, b = state
         self.W.set_value(W)
         self.b.set_value(b)
+        #self.W = W
+        #self.b = b    
 
     def negative_log_likelihood(self, y):
+
         return -T.mean(T.log(self.p_y_given_x)[T.arange(y.shape[0]), y])
 
     def errors(self, y):
+         
         # check if y has same dimension of y_pred
         if y.ndim != self.y_pred.ndim:
             raise TypeError('y should have the same shape as self.y_pred',
@@ -63,11 +71,10 @@ class LogisticRegression(object):
         return (((self.y_pred-y)*0 + self.y_pred), self.p_y_given_x)
 
 
-
-
 class HiddenLayer(object):
     def __init__(self, rng, input, n_in, n_out, W=None, b=None,
                  activation=T.tanh):
+
         self.input = input
 
         if W is None:
@@ -89,8 +96,7 @@ class HiddenLayer(object):
 
         lin_output = T.dot(input, self.W) + self.b
         self.output = (lin_output if activation is None
-                       else activation(lin_output))                       
-                       #else T.maximum(0.0, lin_output)) #activation(lin_output))                       
+                       else T.maximum(0.0, lin_output)) #activation(lin_output))
         # parameters of the model
         self.params = [self.W, self.b]
 
@@ -109,6 +115,7 @@ class HiddenLayer(object):
 
 
 class LeNetConvPoolLayer(object):
+
 
     def __init__(self, rng, input, filter_shape, image_shape, poolsize=(2, 2)):
 
@@ -135,12 +142,11 @@ class LeNetConvPoolLayer(object):
         self.b = theano.shared(value=b_values, borrow=True)
 
         # convolve input feature maps with filters
-        conv_out = conv.conv2d(input=input, filters=self.W,
-                filter_shape=filter_shape, image_shape=image_shape)
+        conv_out = conv2d(input=input, filters=self.W,
+                filter_shape=filter_shape, input_shape=image_shape)
 
         # downsample each feature map individually, using maxpooling
-        pooled_out = downsample.max_pool_2d(input=conv_out,
-                                            ds=poolsize, ignore_border=True)
+        pooled_out = pool.pool_2d(input=conv_out, ws=poolsize, ignore_border=True)
 
         self.output = T.maximum(0.0, pooled_out + self.b.dimshuffle('x', 0, 'x', 'x'))
                 

@@ -20,7 +20,7 @@ class state:
     COOLDOWN = 3
 
 # global vars
-detector_strides = [5,7,9]
+detector_strides = [2, 5, 8]
 static_th = 10
 norep_std_th = 13
 norep_ent_th = 1.0
@@ -95,8 +95,8 @@ class RepDetector:
 	       
 	    
 	    ll = si.shape[0]
-	    th1 = round(ll*0.02)
-	    th2 = numpy.floor(ll*0.98)
+	    th1 = int(round(ll*0.02))
+	    th2 = int(numpy.floor(ll*0.98))
 	    y1 = si[th1]
 	    y2 = si[th2]
 	    x1 = sj[th1]
@@ -181,8 +181,8 @@ class RepDetector:
 	self.ent_arr = numpy.insert(self.ent_arr, history_num-1 , self.cur_entropy, axis=0)
 	self.std_arr = numpy.delete(self.std_arr,0,axis=0)
 	self.std_arr = numpy.insert(self.std_arr, history_num-1 , self.cur_std, axis=0)
-	self.st_std = numpy.median(self.std_arr)
-	self.st_entropy = numpy.median(self.ent_arr)
+	self.st_std = numpy.median(numpy.nan_to_num(self.std_arr))
+	self.st_entropy = numpy.median(numpy.nan_to_num(self.ent_arr))
 	    
 	if (cur_state == state.NO_REP):
 	    # if we see good condition for rep, take the counting and move to rep state
@@ -388,7 +388,7 @@ if __name__ == '__main__':
     frame_rate = 30
     frame_interval_ms = 1000/frame_rate
     
-    fourcc = cv2.cv.CV_FOURCC(*'XVID')    
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')    
     video_writer = cv2.VideoWriter("../out/live_out.avi", fourcc, frame_rate, (640, 480))
 
     frame_counter = 0
